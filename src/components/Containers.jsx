@@ -20,6 +20,7 @@ import {
 import { containerAPI } from '../api/client.js'
 import { cn } from '../utils/cn.js'
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query'
+import { getImageLogo } from '../config/imageLogos.js'
 
 export function Containers() {
   const queryClient = useQueryClient()
@@ -297,15 +298,21 @@ export function Containers() {
                     let iconUrl = container.iconUrl;
                     
                     // 如果容器没有自定义图标，则查找镜像图标
-                    if (!iconUrl) {
-                      // 遍历所有镜像图标，查找匹配的镜像
-                      for (const [imageName, logoUrl] of Object.entries(imageLogos)) {
-                        // 检查容器使用的镜像是否包含镜像名称
-                        // 镜像名称格式可能是 "repository" 或 "repository:tag"
-                        if (container.usingImage.startsWith(imageName) || 
-                            container.usingImage.includes(`${imageName}:`)) {
-                          iconUrl = logoUrl;
-                          break;
+                    if (!iconUrl && container.usingImage) {
+                      // 首先尝试使用内置logo配置
+                      const builtInLogo = getImageLogo(container.usingImage, imageLogos);
+                      if (builtInLogo) {
+                        iconUrl = builtInLogo;
+                      } else {
+                        // 如果没有内置logo，则使用原来的匹配逻辑
+                        for (const [imageName, logoUrl] of Object.entries(imageLogos)) {
+                          // 检查容器使用的镜像是否包含镜像名称
+                          // 镜像名称格式可能是 "repository" 或 "repository:tag"
+                          if (container.usingImage.startsWith(imageName) || 
+                              container.usingImage.includes(`${imageName}:`)) {
+                            iconUrl = logoUrl;
+                            break;
+                          }
                         }
                       }
                     }

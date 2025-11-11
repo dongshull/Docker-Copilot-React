@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { HardDrive, Trash, Trash2, Calendar, Download, RefreshCw, Link, BrushCleaning, List, Image as ImageIcon } from 'lucide-react'
 import { imageAPI } from '../api/client.js'
 import { cn } from '../utils/cn.js'
+import { builtInImageLogos, getImageLogo } from '../config/imageLogos.js'
 
 export function Images() {
   const [images, setImages] = useState([])
@@ -420,9 +421,9 @@ export function Images() {
                     />
                   )}
                   <div className="flex-shrink-0">
-                    {imageLogos[`${image.name}:${image.tag}`] || imageLogos[image.name] ? (
+                    {getImageLogo(image.name, imageLogos) || imageLogos[`${image.name}:${image.tag}`] || imageLogos[image.name] ? (
                       <img 
-                        src={imageLogos[`${image.name}:${image.tag}`] || imageLogos[image.name]} 
+                        src={getImageLogo(image.name, imageLogos) || imageLogos[`${image.name}:${image.tag}`] || imageLogos[image.name]} 
                         alt={image.name} 
                         className="h-10 w-10 rounded-lg object-cover"
                         onError={(e) => {
@@ -523,9 +524,9 @@ export function Images() {
                   />
                 )}
                 <div className="flex-shrink-0">
-                  {imageLogos[`${image.name}:${image.tag}`] || imageLogos[image.name] ? (
+                  {getImageLogo(image.name, imageLogos) || imageLogos[`${image.name}:${image.tag}`] || imageLogos[image.name] ? (
                     <img 
-                      src={imageLogos[`${image.name}:${image.tag}`] || imageLogos[image.name]} 
+                      src={getImageLogo(image.name, imageLogos) || imageLogos[`${image.name}:${image.tag}`] || imageLogos[image.name]} 
                       alt={image.name} 
                       className="h-12 w-12 rounded-lg object-cover"
                       onError={(e) => {
@@ -561,6 +562,22 @@ export function Images() {
                   >
                     <Link className="h-4 w-4" />
                   </a>
+                  <button
+                    onClick={() => handleDeleteImage(image.id)}
+                    className="p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                    title="删除镜像"
+                  >
+                    <Trash className="h-4 w-4" />
+                  </button>
+                  {image.inUsed && (
+                    <button
+                      onClick={() => handleDeleteImage(image.id, true)}
+                      className="p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                      title="强制删除镜像"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  )}
                 </div>
               </div>
               
