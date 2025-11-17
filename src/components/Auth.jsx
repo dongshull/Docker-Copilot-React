@@ -109,7 +109,7 @@ export function Auth({ onLogin }) {
 
         {/* 底部信息 */}
         <div className="text-center text-sm text-gray-500 dark:text-gray-400">
-          <p>连接至: http://IP:12712</p>
+          <p>连接至: http://127.0.0.1:12712</p>
         </div>
       </div>
     </div>
