@@ -14,7 +14,7 @@ if [ $# -eq 0 ]; then
   PORT="${PORT:-12713}"
   START_SERVER=true
   CONFIG_DIR="/app/src/config"
-  IMAGE_CONFIG_DIR="/app/image-config"
+  IMAGE_CONFIG_DIR="/app/dist/src/config"
 else
   # 本地配置模式
   API_BASE_URL="${1}"
@@ -22,7 +22,7 @@ else
   PORT="${3:-12713}"
   START_SERVER=false
   CONFIG_DIR="./src/config"
-  IMAGE_CONFIG_DIR="./image-config"
+  IMAGE_CONFIG_DIR="./dist/src/config"
 fi
 
 echo "================================================"
@@ -68,6 +68,7 @@ init_config_dir() {
     # 检查镜像配置目录是否存在且不为空
     if [ -d "$image_config_dir" ] && [ -n "$(ls -A "$image_config_dir")" ]; then
       echo "  Copying config files from image to host directory..."
+      # 复制到宿主机挂载的目录
       cp -r "$image_config_dir"/* "$host_config_dir"/ 2>/dev/null || echo "  No files to copy or copy failed"
       echo "✓ Config files copied successfully"
     else
@@ -82,7 +83,7 @@ init_config_dir() {
 if [ "$START_SERVER" = "true" ]; then
   # 检查是否挂载了宿主机目录（通过检查目录是否可写）
   if [ -w "/app/src" ]; then
-    init_config_dir "/app/src/config" "/app/image-config"
+    init_config_dir "/app/src/config" "/app/dist/src/config"
   fi
 fi
 
