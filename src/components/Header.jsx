@@ -272,18 +272,41 @@ export function Sidebar({ activeTab, onTabChange, onLogout, isCollapsed = false,
               </button>
             </div>
             {!sidebarCollapsed && (
-              <div className="text-xs text-gray-500 dark:text-gray-400 text-center mt-4 space-y-1">
-                <p className="font-medium text-gray-700 dark:text-gray-300">Docker Copilot</p>
-                <p>前端版本：{FRONTEND_VERSION}</p>
-                <p className={cn(
-                  versionData?.hasUpdate ? 'text-yellow-600 dark:text-yellow-400 font-medium' : ''
-                )}>
-                  后端版本：{versionData?.version || 'v1.0'}
-                  {versionData?.hasUpdate && ' (有更新)'}
-                </p>
-                {versionData?.buildDate && (
-                  <p className="text-gray-400 dark:text-gray-500">构建时间：{formatBuildDate(versionData.buildDate)}</p>
-                )}
+              <div className="mt-4">
+                {/* 版本信息卡片 */}
+                <div className="bg-gradient-to-br from-primary-50 to-primary-100 dark:from-primary-900/20 dark:to-primary-800/20 rounded-lg p-3 border border-primary-200 dark:border-primary-700/50">
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-medium text-gray-600 dark:text-gray-400">前端</span>
+                      <span className="text-xs font-semibold text-primary-600 dark:text-primary-400 bg-white dark:bg-primary-900/30 px-2 py-0.5 rounded">{FRONTEND_VERSION}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-medium text-gray-600 dark:text-gray-400">后端</span>
+                      <div className="flex items-center gap-1">
+                        <span className={cn(
+                          "text-xs font-semibold px-2 py-0.5 rounded",
+                          versionData?.hasUpdate 
+                            ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400' 
+                            : 'bg-white dark:bg-primary-900/30 text-primary-600 dark:text-primary-400'
+                        )}>
+                          {versionData?.version || 'v1.0'}
+                        </span>
+                        {versionData?.hasUpdate && (
+                          <span className="text-xs font-medium text-yellow-600 dark:text-yellow-400 bg-yellow-100 dark:bg-yellow-900/30 px-1.5 py-0.5 rounded animate-pulse">
+                            更新
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    {versionData?.buildDate && (
+                      <div className="pt-2 border-t border-primary-200 dark:border-primary-700/50">
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          构建时间：{formatBuildDate(versionData.buildDate)}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
             )}
           </div>
