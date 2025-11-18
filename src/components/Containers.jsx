@@ -627,29 +627,23 @@ export function Containers() {
               "relative z-10",
               viewMode === 'grid' 
                 ? "flex flex-col space-y-3" 
-                : "flex items-center justify-between"
+                : "flex items-center justify-between gap-4"
             )}>
-              {/* 容器选择和基本信息 */}
+              {/* 左侧：选择框和图标 */}
               <div className={cn(
-                viewMode === 'grid'
-                  ? "flex flex-col space-y-3"
-                  : "flex items-center space-x-4"
+                "flex items-center",
+                viewMode === 'grid' ? "space-x-3" : "space-x-3"
               )}>
-                {/* 容器图标和标题 */}
-                <div className={cn(
-                  "flex items-center",
-                  viewMode === 'grid' ? "space-x-3" : "space-x-4"
-                )}>
-                  {isBatchMode && (
-                    <div className="flex-shrink-0">
-                      <input
-                        type="checkbox"
-                        checked={selectedContainers.includes(container.id)}
-                        onChange={() => toggleContainerSelection(container.id)}
-                        className="h-5 w-5 text-primary-600 rounded focus:ring-primary-500"
-                      />
-                    </div>
-                  )}
+                {isBatchMode && (
+                  <div className="flex-shrink-0 mt-0.5">
+                    <input
+                      type="checkbox"
+                      checked={selectedContainers.includes(container.id)}
+                      onChange={() => toggleContainerSelection(container.id)}
+                      className="h-5 w-5 text-primary-600 rounded focus:ring-primary-500"
+                    />
+                  </div>
+                )}
                   <div className="flex-shrink-0">
                     {(() => {
                       // 获取镜像logo数据
@@ -705,65 +699,88 @@ export function Containers() {
                       );
                     }
                   })()}
-                  <div className="flex items-center space-x-2">
+                </div>
+              </div>
+                
+                {/* 中间：容器信息（垂直排列在列表视图） */}
+                <div className={cn(
+                  "flex-1 min-w-0",
+                  viewMode === 'grid' ? "flex flex-col space-y-3" : "flex flex-col justify-center gap-1"
+                )}>
+                  <div className="flex items-center gap-2">
                     <h3 
                       className={cn(
                         "font-semibold text-gray-900 dark:text-white truncate cursor-pointer hover:underline",
-                        viewMode === 'grid' ? "text-base" : "text-lg"
+                        viewMode === 'grid' ? "text-base" : "text-sm"
                       )}
                       onClick={() => setSelectedContainer(container)}
                     >
                       {container.name}
                     </h3>
                     {container.haveUpdate && (
-                      <span className="badge-warning text-xs">可更新</span>
+                      <span className="badge-warning text-xs flex-shrink-0">可更新</span>
                     )}
                   </div>
-                </div>
-              </div>
-
-                {/* 容器镜像信息 */}
-                <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
-                  {container.usingImage}
-                </p>
-
-                {/* 显示操作进度 */}
-                {containerActions[container.id]?.loading && containerActions[container.id]?.progress && (
-                  <p className="text-xs text-blue-600 dark:text-blue-400 truncate">
-                    {containerActions[container.id].progress}
+                  
+                  <p className={cn(
+                    "text-gray-500 dark:text-gray-400 truncate",
+                    viewMode === 'grid' ? "text-sm" : "text-xs"
+                  )}>
+                    {container.usingImage}
                   </p>
-                )}
-
-                {/* 容器元信息 */}
-                <div className={cn(
-                  "flex items-center text-xs text-gray-500 dark:text-gray-400",
-                  viewMode === 'grid' ? "flex-col items-start space-y-1" : "space-x-4"
-                )}>
-                  <div className="flex items-center space-x-1">
-                    <Calendar className="h-3 w-3" />
-                    <span>创建: {new Date(container.createTime).toLocaleDateString()}</span>
-                  </div>
-                  {container.status === 'running' && (
-                    <div className="flex items-center space-x-1">
-                      <Clock className="h-3 w-3" />
-                      <span>运行: {container.runningTime}</span>
+                  
+                  {viewMode === 'list' && container.status === 'running' && (
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      运行时间: {container.runningTime}
+                    </p>
+                  )}
+                  
+                  {containerActions[container.id]?.loading && containerActions[container.id]?.progress && (
+                    <p className="text-xs text-blue-600 dark:text-blue-400 truncate">
+                      {containerActions[container.id].progress}
+                    </p>
+                  )}
+                  
+                  {viewMode === 'grid' && (
+                    <div className="flex flex-col gap-1 text-xs text-gray-500 dark:text-gray-400">
+                      <div className="flex items-center gap-1">
+                        <Calendar className="h-3 w-3" />
+                        <span>创建: {new Date(container.createTime).toLocaleDateString()}</span>
+                      </div>
+                      {container.status === 'running' && (
+                        <div className="flex items-center gap-1">
+                          <Clock className="h-3 w-3" />
+                          <span>运行: {container.runningTime}</span>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
-              </div>
 
-              {/* 容器操作按钮 */}
+              {/* 右侧：状态和操作按钮 */}
               <div className={cn(
-                "flex items-center",
-                viewMode === 'grid' ? "justify-between pt-3 border-t border-gray-200 dark:border-gray-700" : "space-x-3"
+                "flex items-center flex-shrink-0",
+                viewMode === 'grid' 
+                  ? "flex-col gap-3 pt-3 border-t border-gray-200 dark:border-gray-700 w-full"
+                  : "gap-3 flex-col md:flex-row md:items-center"
               )}>
-                {getStatusBadge(container.status)}
+                {/* 状态徽章 */}
+                {viewMode === 'list' && (
+                  <div className="flex-shrink-0">
+                    {getStatusBadge(container.status)}
+                  </div>
+                )}
+                {viewMode === 'grid' && (
+                  <div className="w-full">
+                    {getStatusBadge(container.status)}
+                  </div>
+                )}
                 
-                {/* 单个容器操作按钮（非批量模式下显示） */}
+                {/* 操作按钮 */}
                 {!isBatchMode && (
                   <div className={cn(
-                    "flex items-center",
-                    viewMode === 'grid' ? "flex-wrap gap-2" : "space-x-1"
+                    "flex items-center flex-shrink-0",
+                    viewMode === 'grid' ? "flex-wrap gap-2 w-full" : "gap-1 flex-wrap"
                   )}>
                     {containerActions[container.id]?.loading ? (
                       <div className="flex items-center space-x-2 px-4 py-2 bg-primary-50 dark:bg-primary-900/20 rounded-lg">
