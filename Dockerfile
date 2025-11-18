@@ -29,8 +29,8 @@ WORKDIR /app
 # 从构建阶段复制构建结果
 COPY --from=builder /app/dist ./dist
 
-# 从构建阶段复制配置文件
-COPY --from=builder /app/src/config ./src/config
+# 从构建阶段复制配置文件到临时位置
+COPY --from=builder /app/src/config ./image-config
 
 # 复制配置脚本
 COPY docker-config.sh /app/docker-config.sh

@@ -14,6 +14,7 @@ if [ $# -eq 0 ]; then
   PORT="${PORT:-12713}"
   START_SERVER=true
   CONFIG_DIR="/app/src/config"
+  IMAGE_CONFIG_DIR="/app/image-config"
 else
   # 本地配置模式
   API_BASE_URL="${1}"
@@ -21,6 +22,7 @@ else
   PORT="${3:-12713}"
   START_SERVER=false
   CONFIG_DIR="./src/config"
+  IMAGE_CONFIG_DIR="./image-config"
 fi
 
 echo "================================================"
@@ -30,6 +32,7 @@ echo "API Base URL: $API_BASE_URL"
 echo "Distribution: $DIST_DIR"
 echo "Server Port:  $PORT"
 echo "Config Dir:   $CONFIG_DIR"
+echo "Image Config: $IMAGE_CONFIG_DIR"
 echo "================================================"
 
 # 检查 dist 目录
@@ -62,13 +65,13 @@ init_config_dir() {
   if [ -z "$(ls -A "$host_config_dir")" ]; then
     echo "✓ Host config directory is empty, initializing with image config files..."
     
-    # 复制镜像中的配置文件到宿主机目录
-    if [ -d "$image_config_dir" ]; then
+    # 检查镜像配置目录是否存在且不为空
+    if [ -d "$image_config_dir" ] && [ -n "$(ls -A "$image_config_dir")" ]; then
       echo "  Copying config files from image to host directory..."
-      cp -r "$image_config_dir"/* "$host_config_dir"/
+      cp -r "$image_config_dir"/* "$host_config_dir"/ 2>/dev/null || echo "  No files to copy or copy failed"
       echo "✓ Config files copied successfully"
     else
-      echo "⚠ Warning: Image config directory $image_config_dir not found"
+      echo "⚠ Warning: Image config directory $image_config_dir not found or is empty"
     fi
   else
     echo "✓ Host config directory already contains files, skipping initialization"
@@ -79,7 +82,7 @@ init_config_dir() {
 if [ "$START_SERVER" = "true" ]; then
   # 检查是否挂载了宿主机目录（通过检查目录是否可写）
   if [ -w "/app/src" ]; then
-    init_config_dir "/app/src/config" "/app/src/config"
+    init_config_dir "/app/src/config" "/app/image-config"
   fi
 fi
 
