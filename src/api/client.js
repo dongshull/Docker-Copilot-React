@@ -5,7 +5,7 @@ import axios from 'axios'
 function getAPIBaseURL() {
   // 1. 最高优先级：使用当前主机
   if (typeof window !== 'undefined' && window.location.host) {
-    const currentHostURL = `http://${window.location.host}`
+    const currentHostURL = `${window.location.protocol}//${window.location.host}`
     console.log('Using current host API URL:', currentHostURL)
     return currentHostURL
   }
