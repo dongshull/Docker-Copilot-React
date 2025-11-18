@@ -177,6 +177,8 @@ export function Containers() {
       // 对每个选中的容器执行操作
       for (const containerId of selectedContainers) {
         try {
+          const container = containers.find(c => c.id === containerId)
+          
           switch (action) {
             case 'start':
               await containerAPI.startContainer(containerId)
@@ -187,23 +189,50 @@ export function Containers() {
             case 'restart':
               await containerAPI.restartContainer(containerId)
               break
+            case 'update':
+              if (container) {
+                const response = await containerAPI.updateContainer(
+                  containerId,
+                  container.name,
+                  container.usingImage,
+                  true
+                )
+                
+                if (response.data.code === 200 || response.data.code === 0) {
+                  const taskID = response.data.data?.taskID
+                  if (taskID) {
+                    // 保存任务ID并开始轮询进度
+                    setUpdateTasks(prev => ({
+                      ...prev,
+                      [containerId]: taskID
+                    }))
+                    // 调用轮询进度函数
+                    pollProgress(containerId, taskID)
+                  }
+                }
+              }
+              break
             default:
               break
           }
         } finally {
-          // 清除单个容器的操作状态
-          setContainerActions(prev => {
-            const newState = { ...prev }
-            delete newState[containerId]
-            return newState
-          })
+          // 对于非更新操作，立即清除操作状态
+          if (action !== 'update') {
+            setContainerActions(prev => {
+              const newState = { ...prev }
+              delete newState[containerId]
+              return newState
+            })
+          }
         }
       }
 
-      // 延迟刷新以获取最新数据
-      setTimeout(() => {
-        refetch()
-      }, 1500)
+      // 如果不是更新操作，延迟刷新以获取最新数据
+      if (action !== 'update') {
+        setTimeout(() => {
+          refetch()
+        }, 1500)
+      }
       
       // 清除选中状态
       setSelectedContainers([])
