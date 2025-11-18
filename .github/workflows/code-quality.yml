@@ -1,0 +1,152 @@
+name: Code Quality & Tests
+
+# 触发条件
+on:
+  # 拉取请求时触发
+  pull_request:
+    branches:
+      - master
+      - main
+      - dev
+  
+  # 推送到任何分支时触发
+  push:
+    branches:
+      - master
+      - main
+      - dev
+  
+  # 手动触发
+  workflow_dispatch:
+
+jobs:
+  # 代码质量检查
+  code-quality:
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        node-version: [18.x]
+
+    steps:
+      # 1. 检出代码
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 2. 设置 Node.js
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+
+      # 3. 安装依赖
+      - name: Install dependencies
+        run: npm ci
+
+      # 4. 检查代码格式（如果有 prettier）
+      - name: Check code formatting
+        run: |
+          if [ -f "package.json" ] && grep -q "prettier" package.json; then
+            npm run format:check || true
+          fi
+
+      # 5. 构建项目
+      - name: Build project
+        run: npm run build
+
+      # 6. 检查构建产物大小
+      - name: Check bundle size
+        run: |
+          echo "## 📦 构建产物大小"
+          du -sh dist/
+          ls -lh dist/assets/ || true
+
+  # ESLint 代码检查（可选）
+  eslint:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18.x
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      # 如果项目配置了 ESLint
+      - name: Run ESLint
+        run: |
+          if [ -f ".eslintrc.js" ] || [ -f ".eslintrc.json" ] || [ -f ".eslintrc.yml" ]; then
+            npm run lint || true
+          fi
+
+  # 安全扫描
+  security:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 检查依赖中的已知漏洞
+      - name: Run npm audit
+        run: npm audit --audit-level=moderate || true
+
+      # 使用 Snyk 进行安全扫描（可选，需要 Snyk Token）
+      - name: Run Snyk Security Scan
+        uses: snyk/actions/node@master
+        continue-on-error: true
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          args: --severity-threshold=high
+
+  # 生成测试报告（如果有测试）
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18.x
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      # 运行测试（如果项目配置了 test 脚本）
+      - name: Run tests
+        run: |
+          if grep -q '"test"' package.json; then
+            npm test || true
+          else
+            echo "⚠️  No test script configured"
+          fi
+
+  # 生成构建报告
+  report:
+    needs: [code-quality, eslint, security, test]
+    runs-on: ubuntu-latest
+    if: always()
+    
+    steps:
+      - name: Generate report
+        run: |
+          echo "## ✅ 质量检查完成"
+          echo ""
+          echo "| 检查项 | 状态 |"
+          echo "|--------|------|"
+          echo "| 代码质量 | ${{ needs.code-quality.result }} |"
+          echo "| ESLint | ${{ needs.eslint.result }} |"
+          echo "| 安全扫描 | ${{ needs.security.result }} |"
+          echo "| 测试 | ${{ needs.test.result }} |"

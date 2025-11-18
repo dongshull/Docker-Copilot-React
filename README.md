@@ -42,7 +42,7 @@ npm install
 npm run dev
 ```
 
-访问 **http://localhost:3000** - 开始您的Docker之旅 🚀
+访问 **http://localhost:12713** - 开始您的Docker之旅 🚀
 
 ## 📋 核心功能
 

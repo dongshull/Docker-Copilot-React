@@ -6,7 +6,7 @@ export default defineConfig({
     jsxRuntime: 'automatic'
   })],
   server: {
-    port: 3000,
+    port: 12713,
     host: true
   },
   esbuild: {

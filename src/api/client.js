@@ -1,6 +1,7 @@
 import axios from 'axios'
 
-const API_BASE_URL = 'http://192.168.50.4:12712'
+// 从环境变量读取 API 基础地址，如果没有配置则使用默认值
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:12712'
 
 // 创建axios实例
 const apiClient = axios.create({

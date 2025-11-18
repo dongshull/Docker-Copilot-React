@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  docker-copilot-frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: docker-copilot-frontend
+    ports:
+      - "12713:12713"
+    environment:
+      # 可选：配置环境变量
+      - NODE_ENV=production
+    volumes:
+      # 映射 config 文件夹到主机
+      - ./config:/app/dist/config
+    restart: unless-stopped
+    networks:
+      - docker-copilot-network
+    # 健康检查
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:12713/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+
+networks:
+  docker-copilot-network:
+    driver: bridge
