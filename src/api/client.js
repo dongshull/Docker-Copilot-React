@@ -1,7 +1,29 @@
 import axios from 'axios'
 
-// 从环境变量读取 API 基础地址，如果没有配置则使用默认值
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:12712'
+// 动态获取 API 基础地址
+// 优先级：window.__API_BASE_URL > localStorage > 环境变量 > 默认值
+function getAPIBaseURL() {
+  // 1. 检查全局变量（注入的配置）
+  if (typeof window !== 'undefined' && window.__API_BASE_URL) {
+    return window.__API_BASE_URL
+  }
+  
+  // 2. 检查 localStorage（用户保存的地址）
+  const savedURL = localStorage.getItem('api_base_url')
+  if (savedURL) {
+    return savedURL
+  }
+  
+  // 3. 检查环境变量（构建时注入）
+  if (import.meta.env.VITE_API_BASE_URL) {
+    return import.meta.env.VITE_API_BASE_URL
+  }
+  
+  // 4. 默认值 - 使用当前主机
+  return `http://${window.location.hostname}:12712`
+}
+
+const API_BASE_URL = getAPIBaseURL()
 
 // 创建axios实例
 const apiClient = axios.create({
