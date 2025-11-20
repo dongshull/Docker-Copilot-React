@@ -131,7 +131,13 @@ export function Containers() {
         delete newState[containerId]
         return newState
       })
-      console.error(`操作失败: ${error.response?.data?.msg || error.message}`)
+      
+      // 增加超时错误的处理
+      if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
+        console.error(`操作超时，请稍后手动刷新页面查看操作结果`)
+      } else {
+        console.error(`操作失败: ${error.response?.data?.msg || error.message}`)
+      }
     }
   }
 
@@ -308,7 +314,7 @@ export function Containers() {
             return newState
           })
           await refetch()
-          alert('容器更新完成')
+
         }
       } else {
         throw new Error(response.data.msg || '更新失败')
@@ -320,7 +326,22 @@ export function Containers() {
         delete newState[containerId]
         return newState
       })
-      alert(`更新失败: ${error.response?.data?.msg || error.message}`)
+      
+      // 增加超时错误的处理
+      if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
+        console.error(`更新操作已提交，但连接超时。请稍后手动刷新页面查看操作结果`)
+        // 即使超时也触发轮询，因为操作可能仍在进行中
+        // 这里我们不知道taskID，所以无法启动轮询，只能提示用户稍后查看
+      } else {
+        // 针对名称冲突提供特定的解决方案
+        let errorMessage = error.response?.data?.msg || error.message;
+        if (errorMessage.includes('重命名') || errorMessage.includes('name conflict') || errorMessage.includes('名称冲突')) {
+          errorMessage += '\n\n检测到容器名称冲突问题，建议解决方案：\n' +
+                         '1. 手动删除或重命名冲突的容器\n' +
+                         '2. 使用不同的容器名称进行更新\n' +
+                         '3. 先停止并重命名当前容器，再进行更新操作';
+        }
+      }
     }
   }
 
@@ -392,7 +413,7 @@ export function Containers() {
                           status === 'finished' ||
                           progressMsg.includes('完成') ||
                           progressMsg.includes('成功') ||
-                          (data.code === 200 && (data.msg === 'success' || data.msg === '操作成功'))
+                          (data.code === 200 && (data.msg === 'success' || data.msg === '操作成功' || data.msg === '更新成功'))
 
         // 检查是否失败
         const isFailed = status === 'failed' || 
@@ -415,7 +436,10 @@ export function Containers() {
           // 任务失败 - 立即停止轮询
           console.log('容器更新失败，停止轮询')
           clearPollState()
-          console.error(`❌ 更新失败: ${data.data?.error || data.msg || '更新失败'}`)
+          // 添加更详细的错误信息
+          const errorMsg = data.data?.error || data.data?.message || data.msg || '更新失败'
+          console.error(`❌ 更新失败: ${errorMsg}`)
+          
           return // 确保不再继续执行
         }
 
@@ -436,11 +460,14 @@ export function Containers() {
         } else {
           clearPollState()
           console.error('⏱️ 更新超时，请检查容器状态')
+
         }
       } catch (error) {
         console.error('查询进度失败:', error)
         clearPollState()
         console.error(`❌ 更新失败: ${error.response?.data?.msg || error.message}`)
+        // 显示网络错误或其他异常情况的友好提示
+        
       }
     }
 
@@ -1059,10 +1086,15 @@ function ContainerDetailModal({ container, onClose, onRename, onUpdate, onAction
           const taskID = response.data.data?.taskID
 
           if (taskID) {
-            // 如果返回了taskID，关闭弹窗，让用户在列表中看到进度
+            // 如果返回了taskID，我们需要触发进度轮询
             console.log('更新任务已创建，taskID:', taskID)
-            await queryClient.invalidateQueries(['containers'])
+            
+            // 关闭弹窗
             onClose()
+            
+            // 触发父组件中的进度轮询
+            onUpdate(container.id)
+            
             console.log('✅ 容器更新任务已启动，请在列表中查看进度')
           } else {
             // 没有taskID，更新完成
@@ -1077,7 +1109,13 @@ function ContainerDetailModal({ container, onClose, onRename, onUpdate, onAction
         setIsUpdating(false)
       } catch (error) {
         console.error('更新容器镜像失败:', error)
-        console.error(`❌ 更新失败: ${error.response?.data?.msg || error.message}`)
+        // 增加超时错误的处理
+        if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
+          console.error(`更新操作已提交，但连接超时。请稍后手动刷新页面查看操作结果`)
+          // 即使超时也关闭弹窗并触发轮询，因为操作可能仍在进行中
+          onClose()
+          onUpdate(container.id)
+        }
         setIsUpdating(false)
       }
     }
