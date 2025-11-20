@@ -4,16 +4,10 @@ import {
   Square, 
   RotateCcw, 
   RefreshCw, 
-  Edit3, 
-  Download,
   Upload,
-  Trash2,
-  MoreVertical,
   Clock,
   Calendar,
   Package,
-  CheckCircle,
-  AlertCircle,
   X,
   Info,
   List,
@@ -21,13 +15,12 @@ import {
 } from 'lucide-react'
 import { containerAPI, progressAPI } from '../api/client.js'
 import { cn } from '../utils/cn.js'
-import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { getImageLogo } from '../config/imageLogos.js'
 
 export function Containers() {
   const queryClient = useQueryClient()
   const [selectedContainer, setSelectedContainer] = useState(null)
-  const [showActions, setShowActions] = useState(null)
   // 添加批量操作相关的状态
   const [selectedContainers, setSelectedContainers] = useState([])
   const [isBatchMode, setIsBatchMode] = useState(false)
@@ -71,24 +64,21 @@ export function Containers() {
 
   const handleContainerAction = async (containerId, action) => {
     try {
-      setShowActions(null)
-      
       // 设置操作状态为加载中
       setContainerActions(prev => ({
         ...prev,
         [containerId]: { action, loading: true }
       }))
       
-      let response
       switch (action) {
         case 'start':
-          response = await containerAPI.startContainer(containerId)
+          await containerAPI.startContainer(containerId)
           break
         case 'stop':
-          response = await containerAPI.stopContainer(containerId)
+          await containerAPI.stopContainer(containerId)
           break
         case 'restart':
-          response = await containerAPI.restartContainer(containerId)
+          await containerAPI.restartContainer(containerId)
           break
         default:
           break
@@ -544,26 +534,7 @@ export function Containers() {
     }
   }
 
-  const getStatusBadge = (status) => {
-    // 如果是运行中状态，不显示徽章，只返回 null
-    if (status?.toLowerCase() === 'running') {
-      return null
-    }
-    
-    const statusConfig = {
-      stopped: { label: '已停止', className: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300' },
-      restarting: { label: '重启中', className: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300' },
-      paused: { label: '已暂停', className: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300' }
-    }
 
-    const config = statusConfig[status?.toLowerCase()] || { label: status, className: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300' }
-    
-    return (
-      <span className={cn('inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium transition-all duration-200', config.className)}>
-        {config.label}
-      </span>
-    )
-  }
 
   // 获取状态指示器颜色
   const getStatusIndicatorColor = (status) => {
@@ -948,17 +919,7 @@ export function Containers() {
                   ? "flex-col gap-3 pt-2 border-t border-gray-200 dark:border-gray-700 w-full" 
                   : "gap-2 flex-row"
               )}>
-                {/* 状态徽章 */}
-                {viewMode === 'list' && (
-                  <div className="flex-shrink-0 mt-1">
-                    {getStatusBadge(container.status)}
-                  </div>
-                )}
-                {viewMode === 'grid' && (
-                  <div className="w-full flex justify-center">
-                    {getStatusBadge(container.status)}
-                  </div>
-                )}
+
                 
                 {/* 操作按钮 */}
                 {!isBatchMode && (
@@ -1105,8 +1066,6 @@ function ContainerDetailModal({ container, onClose, onRename, onUpdate, onAction
           if (updatedContainer) {
             // 检查是否有镜像图标
             const imageLogos = JSON.parse(localStorage.getItem('docker_copilot_image_logos') || '{}');
-            // 查找匹配的镜像图标
-            let matchedImageKey = null;
             
             // 如果容器没有自定义图标，则查找镜像图标
             if (!updatedContainer.iconUrl) {
@@ -1251,59 +1210,9 @@ function ContainerDetailModal({ container, onClose, onRename, onUpdate, onAction
     }
   }
 
-  // 保存图标URL
-  const saveIconUrl = async () => {
-    try {
-      setIsUpdating(true)
-      
-      // 模拟API调用延迟
-      await new Promise(resolve => setTimeout(resolve, 500))
-      
-      // 创建更新后的容器对象
-      const updatedContainerData = { ...container, iconUrl: iconUrl }
-      
-      // 更新当前容器状态
-      setCurrentContainer(updatedContainerData)
-      
-      // 更新父组件中的容器列表状态
-      // 注意：实际项目中这里应该调用API保存到服务器
-      // 我们通过更新React Query缓存来模拟保存效果
-      const containersQueryData = queryClient.getQueryData(['containers'])
-      if (containersQueryData) {
-        const updatedContainers = containersQueryData.map(c => 
-          c.id === container.id ? updatedContainerData : c
-        )
-        queryClient.setQueryData(['containers'], updatedContainers)
-      }
-      
-      setIsUpdating(false)
-    } catch (error) {
-      console.error('保存图标URL失败:', error)
-      setIsUpdating(false)
-    }
-  }
 
-  // 获取状态徽章组件
-  const getStatusBadge = (status) => {
-    // 如果是运行中状态，不显示徽章，只返回 null
-    if (status?.toLowerCase() === 'running') {
-      return null
-    }
-    
-    const statusConfig = {
-      stopped: { label: '已停止', className: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200' },
-      restarting: { label: '重启中', className: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200' },
-      paused: { label: '已暂停', className: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200' }
-    }
-    
-    const config = statusConfig[status] || { label: status, className: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-400' }
-    
-    return (
-      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${config.className}`}>
-        {config.label}
-      </span>
-    )
-  }
+
+
 
   // 获取状态指示器颜色
   const getStatusIndicatorColor = (status) => {
@@ -1392,12 +1301,9 @@ function ContainerDetailModal({ container, onClose, onRename, onUpdate, onAction
                   )}></div>
                 </div>
                 <div className="ml-3">
-                  <div className="flex flex-col">
-                    <span className="text-sm font-medium text-gray-900 dark:text-white">
-                      {currentContainer.name}
-                    </span>
-                    {getStatusBadge(currentContainer.status)}
-                  </div>
+                  <span className="text-sm font-medium text-gray-900 dark:text-white">
+                    {currentContainer.name}
+                  </span>
                   <div className="flex items-center mt-1">
                     <span className="text-xs text-gray-500 dark:text-gray-400">
                       {currentContainer.id.substring(0, 12)}
