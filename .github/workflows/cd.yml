@@ -2,7 +2,7 @@ name: CD - 构建镜像
 
 on:
   push:
-    branches: [master, dev]
+    branches: [docker]
     paths:
       - 'src/**'
       - 'package.json'
