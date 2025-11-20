@@ -29,6 +29,11 @@ export function Images() {
   const [selectedImages, setSelectedImages] = useState([]) // 用于多选功能
   const [isMultiSelectMode, setIsMultiSelectMode] = useState(false) // 多选模式状态
   const [viewMode, setViewMode] = useState('list') // 视图模式: 'list' 或 'grid'
+  const [pruneModal, setPruneModal] = useState({ 
+    isOpen: false, 
+    type: '', 
+    images: [] 
+  }) // 清理确认模态框状态
 
 
 
@@ -188,6 +193,54 @@ export function Images() {
     }
   }
 
+  // 显示清理确认模态框
+  const showPruneConfirm = (type) => {
+    let imagesToPrune = []
+    
+    if (type === 'dangling') {
+      // 获取无tag的镜像
+      imagesToPrune = images.filter(img => img.tag === 'None' || img.tag === '<none>')
+    } else if (type === 'unused') {
+      // 获取未使用的镜像
+      imagesToPrune = images.filter(img => !img.inUsed)
+    }
+    
+    setPruneModal({
+      isOpen: true,
+      type,
+      images: imagesToPrune
+    })
+  }
+
+  // 执行清理操作
+  const handlePruneImages = async (type) => {
+    try {
+      setIsLoading(true)
+      setPruneModal({ isOpen: false, type: '', images: [] })
+      
+      // 使用现有的删除镜像API逐个删除镜像
+      const deletePromises = pruneModal.images.map(image => 
+        imageAPI.deleteImage(image.id)
+      )
+      
+      await Promise.all(deletePromises)
+      
+      // 刷新镜像列表
+      fetchImages()
+      
+      // 显示成功消息
+      const message = type === 'dangling' 
+        ? '无tag镜像清理完成' 
+        : '未使用镜像清理完成'
+      console.log(message)
+    } catch (error) {
+      console.error('清理镜像失败:', error)
+      const errorMsg = error.response?.data?.msg || error.message || '清理镜像失败'
+      setError(errorMsg)
+      setIsLoading(false)
+    }
+  }
+
   const getSizeColor = (size) => {
     const sizeInMB = parseInt(size)
     if (sizeInMB < 100) return 'text-green-600 dark:text-green-400'
@@ -230,6 +283,78 @@ export function Images() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      {/* 清理确认模态框 */}
+      {pruneModal.isOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full max-h-96 overflow-hidden">
+            <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+                {pruneModal.type === 'dangling' ? '清理无tag镜像' : '清理未使用镜像'}
+              </h3>
+            </div>
+            <div className="px-6 py-4 overflow-y-auto max-h-64">
+              {pruneModal.images.length > 0 ? (
+                <>
+                  <p className="text-gray-600 dark:text-gray-400 mb-3">
+                    确定要清理以下 {pruneModal.images.length} 个镜像吗？
+                  </p>
+                  <ul className="space-y-2">
+                    {pruneModal.images.map((image) => (
+                      <li key={image.id} className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-700 rounded">
+                        <div className="flex items-center">
+                          <div className="flex-shrink-0">
+                            <SafeImage
+                              src={getImageLogo(image.name)}
+                              alt={image.name}
+                              className="h-8 w-8 rounded-lg object-cover"
+                              fallback={
+                                <div className="h-8 w-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+                                  <HardDrive className="h-4 w-4 text-white" />
+                                </div>
+                              }
+                            />
+                          </div>
+                          <div className="ml-3">
+                            <div className="text-sm font-medium text-gray-900 dark:text-white">
+                              {image.name}:{image.tag === 'None' || image.tag === '<none>' ? 'latest' : image.tag}
+                            </div>
+                            <div className="text-xs text-gray-500 dark:text-gray-400">
+                              {formatImageSize(image.size)}
+                            </div>
+                          </div>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              ) : (
+                <p className="text-gray-600 dark:text-gray-400">
+                  没有找到需要清理的镜像
+                </p>
+              )}
+            </div>
+            <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/30 flex justify-end space-x-3">
+              <button
+                onClick={() => setPruneModal({ isOpen: false, type: '', images: [] })}
+                className="btn-secondary"
+                disabled={isLoading}
+              >
+                取消
+              </button>
+              {pruneModal.images.length > 0 && (
+                <button
+                  onClick={() => handlePruneImages(pruneModal.type)}
+                  className="btn-primary bg-red-600 hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600"
+                  disabled={isLoading}
+                >
+                  确认清理
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* 页面标题和操作 */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 space-y-4 sm:space-y-0">
         <div>
@@ -274,6 +399,7 @@ export function Images() {
             <>
               <div className="flex">
                 <button 
+                  onClick={() => showPruneConfirm('dangling')}
                   className="btn-secondary rounded-l-lg rounded-r-none border-r border-gray-300 dark:border-gray-600"
                   title="清理没有tag的镜像"
                 >
@@ -281,6 +407,7 @@ export function Images() {
                   <span className="ml-2">无Tag</span>
                 </button>
                 <button 
+                  onClick={() => showPruneConfirm('unused')}
                   className="btn-secondary rounded-r-lg rounded-l-none"
                   title="清理没有使用的镜像"
                 >
@@ -357,7 +484,7 @@ export function Images() {
       )}
 
       {/* 统计信息 */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <div className="card p-6 text-center">
           <div className="text-2xl font-bold text-primary-600 dark:text-primary-400">
             {images.length}
@@ -371,37 +498,16 @@ export function Images() {
           <div className="text-sm text-gray-600 dark:text-gray-400">使用中的镜像</div>
         </div>
         <div className="card p-6 text-center">
-          <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-            {images.filter(img => img.tag === 'latest').length}
+          <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
+            {images.filter(img => !img.inUsed).length}
           </div>
-          <div className="text-sm text-gray-600 dark:text-gray-400">最新版本</div>
+          <div className="text-sm text-gray-600 dark:text-gray-400">未使用的镜像</div>
         </div>
         <div className="card p-6 text-center">
-          <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
-            {images.length > 0 ? (() => {
-              // 计算总大小（以MB为单位）
-              const totalSizeInMB = Math.round(images.reduce((sum, img) => {
-                // 解析镜像大小，处理不同的单位
-                const sizeStr = img.size || "0";
-                const sizeValue = parseFloat(sizeStr);
-                if (sizeStr.includes("Gb") || sizeStr.includes("GB")) {
-                  return sum + sizeValue * 1000; // 转换为MB
-                } else {
-                  return sum + sizeValue;
-                }
-              }, 0));
-              
-              // 根据大小动态显示单位
-              if (totalSizeInMB >= 1000) {
-                // 如果总大小超过1000MB，则显示为GB
-                return `${(totalSizeInMB / 1000).toFixed(1)} GB`;
-              } else {
-                // 否则显示为MB
-                return `${totalSizeInMB} MB`;
-              }
-            })() : '0 MB'}
+          <div className="text-2xl font-bold text-red-600 dark:text-red-400">
+            {images.filter(img => img.tag === 'None' || img.tag === '<none>').length}
           </div>
-          <div className="text-sm text-gray-600 dark:text-gray-400">总存储空间</div>
+          <div className="text-sm text-gray-600 dark:text-gray-400">无Tag镜像</div>
         </div>
       </div>
 
@@ -585,5 +691,3 @@ export function Images() {
     </div>
   )
 }
-
-

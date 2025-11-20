@@ -992,7 +992,11 @@ function ContainerDetailModal({ container, onClose, onRename, onUpdate, onAction
       setCurrentAction(action);
       
       // 调用传入的onAction函数执行实际操作
-      await onAction(container.id, action);
+      if (action === 'update') {
+        await onUpdate(container.id);
+      } else {
+        await onAction(container.id, action);
+      }
       
       // 无效化查询以触发重新获取数据
       await queryClient.invalidateQueries(['containers'])
@@ -1007,10 +1011,10 @@ function ContainerDetailModal({ container, onClose, onRename, onUpdate, onAction
   };
 
   const handleRename = async () => {
-    if (name !== container.name) {
+    if (name !== currentContainer.name) {
       try {
         setIsRenaming(true)
-        console.log(`重命名容器: ${container.name} -> ${name}`)
+        console.log(`重命名容器: ${currentContainer.name} -> ${name}`)
 
         await onRename(container.id, name)
 
@@ -1019,6 +1023,8 @@ function ContainerDetailModal({ container, onClose, onRename, onUpdate, onAction
 
         // 更新当前容器状态
         setCurrentContainer({ ...currentContainer, name: name })
+        // 同时更新表单中的名称
+        setName(name);
 
         console.log('✅ 容器重命名成功')
         setIsRenaming(false)
@@ -1031,12 +1037,12 @@ function ContainerDetailModal({ container, onClose, onRename, onUpdate, onAction
 
   const handleSave = async () => {
     // 如果镜像tag发生变化，则更新容器
-    if (imageNameAndTag !== container.usingImage) {
+    if (imageNameAndTag !== currentContainer.usingImage) {
       try {
         setIsUpdating(true)
 
-        console.log(`开始更新容器镜像: ${container.name}`)
-        console.log(`原镜像: ${container.usingImage}`)
+        console.log(`开始更新容器镜像: ${currentContainer.name}`)
+        console.log(`原镜像: ${currentContainer.usingImage}`)
         console.log(`新镜像: ${imageNameAndTag}`)
 
         // 直接调用API更新容器
@@ -1218,78 +1224,6 @@ function ContainerDetailModal({ container, onClose, onRename, onUpdate, onAction
         
         {/* 弹窗内容 */}
         <div className="px-6 py-4 space-y-5">
-          {/* 容器操作按钮 */}
-          <div className="flex space-x-3">
-            {currentContainer.status === 'running' ? (
-              <>
-                <button 
-                  onClick={() => handleContainerAction('stop')}
-                  disabled={isActionProcessing || isUpdating}
-                  className={`flex-1 py-2 text-sm rounded-lg transition-colors flex items-center justify-center ${
-                    isActionProcessing && currentAction === 'stop'
-                      ? 'bg-gray-200 text-gray-500 cursor-not-allowed dark:bg-gray-700 dark:text-gray-400'
-                      : 'bg-red-600 text-white hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600'
-                  }`}
-                >
-                  {isActionProcessing && currentAction === 'stop' ? (
-                    <>
-                      <RefreshCw className="h-4 w-4 mr-1 animate-spin" />
-                      停止中
-                    </>
-                  ) : (
-                    <>
-                      <Square className="h-4 w-4 mr-1" />
-                      停止
-                    </>
-                  )}
-                </button>
-                <button 
-                  onClick={() => handleContainerAction('restart')}
-                  disabled={isActionProcessing || isUpdating}
-                  className={`flex-1 py-2 text-sm rounded-lg transition-colors flex items-center justify-center ${
-                    isActionProcessing && currentAction === 'restart'
-                      ? 'bg-gray-200 text-gray-500 cursor-not-allowed dark:bg-gray-700 dark:text-gray-400'
-                      : 'bg-yellow-500 text-white hover:bg-yellow-600 dark:bg-yellow-500 dark:hover:bg-yellow-600'
-                  }`}
-                >
-                  {isActionProcessing && currentAction === 'restart' ? (
-                    <>
-                      <RefreshCw className="h-4 w-4 mr-1 animate-spin" />
-                      重启中
-                    </>
-                  ) : (
-                    <>
-                      <RotateCcw className="h-4 w-4 mr-1" />
-                      重启
-                    </>
-                  )}
-                </button>
-              </>
-            ) : (
-              <button 
-                onClick={() => handleContainerAction('start')}
-                disabled={isActionProcessing || isUpdating}
-                className={`flex-1 py-2 text-sm rounded-lg transition-colors flex items-center justify-center ${
-                  isActionProcessing && currentAction === 'start'
-                    ? 'bg-gray-200 text-gray-500 cursor-not-allowed dark:bg-gray-700 dark:text-gray-400'
-                    : 'bg-green-600 text-white hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-600'
-                }`}
-              >
-                {isActionProcessing && currentAction === 'start' ? (
-                  <>
-                    <RefreshCw className="h-4 w-4 mr-1 animate-spin" />
-                    启动中
-                  </>
-                ) : (
-                  <>
-                    <Play className="h-4 w-4 mr-1" />
-                    启动
-                  </>
-                )}
-              </button>
-            )}
-          </div>
-          
           {/* 容器名称 */}
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -1305,14 +1239,19 @@ function ContainerDetailModal({ container, onClose, onRename, onUpdate, onAction
               />
               <button
                 onClick={handleRename}
-                disabled={isRenaming || name === container.name || isActionProcessing || isUpdating}
+                disabled={isRenaming || (name === currentContainer.name) || isActionProcessing || isUpdating}
                 className={`px-3 py-2 text-sm rounded-lg transition-colors ${
-                  isRenaming || name === container.name
+                  isRenaming || (name === currentContainer.name)
                     ? 'bg-gray-200 text-gray-500 cursor-not-allowed dark:bg-gray-700 dark:text-gray-400'
                     : 'bg-primary-600 text-white hover:bg-primary-700 dark:bg-primary-500 dark:hover:bg-primary-600'
                 }`}
               >
-                {isRenaming ? '...' : '重命名'}
+                {isRenaming ? (
+                  <>
+                    <RefreshCw className="h-4 w-4 mr-1 animate-spin" />
+                    重命名中
+                  </>
+                ) : '重命名'}
               </button>
             </div>
           </div>
@@ -1333,9 +1272,9 @@ function ContainerDetailModal({ container, onClose, onRename, onUpdate, onAction
               />
               <button
                 onClick={handleSave}
-                disabled={isUpdating || imageNameAndTag === container.usingImage || !imageNameAndTag.trim()}
+                disabled={isUpdating || (imageNameAndTag === currentContainer.usingImage) || !imageNameAndTag.trim()}
                 className={`px-3 py-2 text-sm rounded-lg transition-colors flex items-center ${
-                  isUpdating || imageNameAndTag === container.usingImage || !imageNameAndTag.trim()
+                  isUpdating || (imageNameAndTag === currentContainer.usingImage) || !imageNameAndTag.trim()
                     ? 'bg-gray-200 text-gray-500 cursor-not-allowed dark:bg-gray-700 dark:text-gray-400'
                     : 'bg-primary-600 text-white hover:bg-primary-700 dark:bg-primary-500 dark:hover:bg-primary-600'
                 }`}
@@ -1354,12 +1293,11 @@ function ContainerDetailModal({ container, onClose, onRename, onUpdate, onAction
               修改镜像后点击"更换镜像"按钮将重新创建容器
             </p>
           </div>
-          
         </div>
         
-        {/* 弹窗底部 */}
+        {/* 弹窗底部操作按钮 */}
         <div className="border-t border-gray-200 dark:border-gray-700 px-6 py-4 bg-gray-50 dark:bg-gray-700/30">
-          <div className="flex justify-end">
+          <div className="flex justify-between">
             <button
               onClick={onClose}
               disabled={isActionProcessing || isUpdating}
@@ -1367,6 +1305,99 @@ function ContainerDetailModal({ container, onClose, onRename, onUpdate, onAction
             >
               关闭
             </button>
+            
+            <div className="flex space-x-2">
+              <button 
+                onClick={() => onUpdate(container.id)}
+                disabled={isActionProcessing || isUpdating}
+                className={`px-4 py-2 text-sm rounded-lg transition-colors flex items-center ${
+                  isActionProcessing && currentAction === 'update'
+                    ? 'bg-gray-200 text-gray-500 cursor-not-allowed dark:bg-gray-700 dark:text-gray-400'
+                    : 'bg-purple-600 text-white hover:bg-purple-700 dark:bg-purple-500 dark:hover:bg-purple-600'
+                }`}
+              >
+                {isActionProcessing && currentAction === 'update' ? (
+                  <>
+                    <RefreshCw className="h-4 w-4 mr-1 animate-spin" />
+                    更新中
+                  </>
+                ) : (
+                  <>
+                    <Upload className="h-4 w-4 mr-1" />
+                    更新
+                  </>
+                )}
+              </button>
+              
+              {currentContainer.status === 'running' ? (
+                <>
+                  <button 
+                    onClick={() => handleContainerAction('stop')}
+                    disabled={isActionProcessing || isUpdating}
+                    className={`px-4 py-2 text-sm rounded-lg transition-colors flex items-center ${
+                      isActionProcessing && currentAction === 'stop'
+                        ? 'bg-gray-200 text-gray-500 cursor-not-allowed dark:bg-gray-700 dark:text-gray-400'
+                        : 'bg-red-600 text-white hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600'
+                    }`}
+                  >
+                    {isActionProcessing && currentAction === 'stop' ? (
+                      <>
+                        <RefreshCw className="h-4 w-4 mr-1 animate-spin" />
+                        停止中
+                      </>
+                    ) : (
+                      <>
+                        <Square className="h-4 w-4 mr-1" />
+                        停止
+                      </>
+                    )}
+                  </button>
+                  <button 
+                    onClick={() => handleContainerAction('restart')}
+                    disabled={isActionProcessing || isUpdating}
+                    className={`px-4 py-2 text-sm rounded-lg transition-colors flex items-center ${
+                      isActionProcessing && currentAction === 'restart'
+                        ? 'bg-gray-200 text-gray-500 cursor-not-allowed dark:bg-gray-700 dark:text-gray-400'
+                        : 'bg-yellow-500 text-white hover:bg-yellow-600 dark:bg-yellow-500 dark:hover:bg-yellow-600'
+                    }`}
+                  >
+                    {isActionProcessing && currentAction === 'restart' ? (
+                      <>
+                        <RefreshCw className="h-4 w-4 mr-1 animate-spin" />
+                        重启中
+                      </>
+                    ) : (
+                      <>
+                        <RotateCcw className="h-4 w-4 mr-1" />
+                        重启
+                      </>
+                    )}
+                  </button>
+                </>
+              ) : (
+                <button 
+                  onClick={() => handleContainerAction('start')}
+                  disabled={isActionProcessing || isUpdating}
+                  className={`px-4 py-2 text-sm rounded-lg transition-colors flex items-center ${
+                    isActionProcessing && currentAction === 'start'
+                      ? 'bg-gray-200 text-gray-500 cursor-not-allowed dark:bg-gray-700 dark:text-gray-400'
+                      : 'bg-green-600 text-white hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-600'
+                  }`}
+                >
+                  {isActionProcessing && currentAction === 'start' ? (
+                    <>
+                      <RefreshCw className="h-4 w-4 mr-1 animate-spin" />
+                      启动中
+                    </>
+                  ) : (
+                    <>
+                      <Play className="h-4 w-4 mr-1" />
+                      启动
+                    </>
+                  )}
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </div>
