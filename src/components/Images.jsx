@@ -105,22 +105,6 @@ export function Images() {
 
   const handleDeleteImage = async (imageId, force = false) => {
     try {
-      // Check if this is the protected image (only protect when not force deleting)
-      const imageToDelete = images.find(img => img.id === imageId);
-      const protectedImage = '0nlylty/dockercopilot';
-      
-      if (!force && imageToDelete && imageToDelete.name.includes(protectedImage)) {
-        // 使用自定义弹窗替换alert
-        setConfirmModal({
-          isOpen: true,
-          title: '操作禁止',
-          message: '无法删除受保护的系统镜像',
-          onConfirm: () => setConfirmModal({ isOpen: false }),
-          onCancel: null,
-          type: 'info'
-        });
-        return;
-      }
 
       // 使用自定义弹窗替换confirm
       setConfirmModal({
@@ -196,32 +180,7 @@ export function Images() {
     try {
       if (selectedImages.length === 0) return
 
-      // Filter out protected images only when not force deleting
-      const protectedImage = '0nlylty/dockercopilot';
-      let filteredImages = selectedImages;
-      
-      if (!force) {
-        filteredImages = selectedImages.filter(imageId => {
-          const image = images.find(img => img.id === imageId);
-          return image && !image.name.includes(protectedImage);
-        });
-
-        // If any images were filtered out, show a message
-        if (filteredImages.length < selectedImages.length) {
-          const protectedCount = selectedImages.length - filteredImages.length;
-          // 使用自定义弹窗替换alert
-          setConfirmModal({
-            isOpen: true,
-            title: '操作提示',
-            message: `跳过了 ${protectedCount} 个受保护的系统镜像`,
-            onConfirm: () => setConfirmModal({ isOpen: false }),
-            onCancel: null,
-            type: 'info'
-          });
-        }
-      }
-
-      if (filteredImages.length === 0) {
+      if (selectedImages.length === 0) {
         return; // No images to delete
       }
 
@@ -230,15 +189,15 @@ export function Images() {
         isOpen: true,
         title: '确认批量删除',
         message: force 
-          ? `确定要强制删除选中的 ${filteredImages.length} 个镜像吗？这将删除正在使用的镜像！` 
-          : `确定要删除选中的 ${filteredImages.length} 个镜像吗？`,
+          ? `确定要强制删除选中的 ${selectedImages.length} 个镜像吗？这将删除正在使用的镜像！` 
+          : `确定要删除选中的 ${selectedImages.length} 个镜像吗？`,
         onConfirm: async () => {
           setConfirmModal({ isOpen: false });
           setIsLoading(true);
           
           try {
             // 批量删除镜像
-            const deletePromises = filteredImages.map(imageId => 
+            const deletePromises = selectedImages.map(imageId => 
               imageAPI.deleteImage(imageId, force)
             );
             
@@ -250,7 +209,7 @@ export function Images() {
             fetchImages();
             
             // 显示成功消息
-            console.log(`${filteredImages.length} 个镜像删除成功`);
+            console.log(`${selectedImages.length} 个镜像删除成功`);
           } catch (error) {
             console.error('批量删除镜像失败:', error);
             const errorMsg = error.response?.data?.msg || error.message || '批量删除镜像失败';
@@ -274,13 +233,11 @@ export function Images() {
     let imagesToPrune = []
     
     if (type === 'dangling') {
-      // 获取无tag的镜像 (still protect the image even when pruning)
-      imagesToPrune = images.filter(img => (img.tag === 'None' || img.tag === '<none>') && !img.name.includes('0nlylty/dockercopilot'))
+      // 获取无tag的镜像
+      imagesToPrune = images.filter(img => (img.tag === 'None' || img.tag === '<none>'))
     } else if (type === 'unused') {
-      // 获取未使用的镜像 (allow pruning of unused protected images)
+      // 获取未使用的镜像
       imagesToPrune = images.filter(img => !img.inUsed)
-      // But still protect the specific protected image
-      imagesToPrune = imagesToPrune.filter(img => !img.name.includes('0nlylty/dockercopilot'))
     }
     
     setPruneModal({

@@ -134,30 +134,8 @@ export function Containers() {
   // 批量操作处理函数
   const handleBatchAction = async (action) => {
     try {
-      // Filter out containers using the protected image
-      const protectedImage = '0nlylty/dockercopilot';
-      const filteredContainers = selectedContainers.filter(containerId => {
-        const container = containers.find(c => c.id === containerId);
-        return container && !container.usingImage.includes(protectedImage);
-      });
-
-      // If any containers were filtered out, show a message
-      if (filteredContainers.length < selectedContainers.length) {
-        const protectedCount = selectedContainers.length - filteredContainers.length;
-        // 使用自定义弹窗替换console.log
-        setConfirmModal({
-          isOpen: true,
-          title: '操作提示',
-          message: `跳过了 ${protectedCount} 个使用受保护镜像的容器`,
-          onConfirm: () => setConfirmModal({ isOpen: false }),
-          onCancel: null,
-          type: 'info'
-        });
-      }
-
-      // Use filtered containers for the operations
       // 为所有选中的容器设置加载状态
-      filteredContainers.forEach(containerId => {
+      selectedContainers.forEach(containerId => {
         setContainerActions(prev => ({
           ...prev,
           [containerId]: { action, loading: true }
@@ -170,7 +148,7 @@ export function Containers() {
           if (!oldData) return oldData
           
           return oldData.map(container => {
-            if (filteredContainers.includes(container.id)) {
+            if (selectedContainers.includes(container.id)) {
               let newStatus = container.status
               switch (action) {
                 case 'start':
@@ -193,7 +171,7 @@ export function Containers() {
       }
       
       // 对每个选中的容器执行操作
-      for (const containerId of filteredContainers) {
+      for (const containerId of selectedContainers) {
         try {
           const container = containers.find(c => c.id === containerId)
           
