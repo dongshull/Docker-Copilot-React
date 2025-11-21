@@ -30,7 +30,7 @@ WORKDIR /app
 COPY --from=builder /app/dist ./dist
 
 # 从构建阶段复制配置文件到 dist 目录中，使其可以通过 Web 服务器访问
-COPY --from=builder /app/src/config ./dist/src/config
+COPY --from=builder /app/src/config ./dist/config
 
 # 复制配置脚本
 COPY docker-config.sh /app/docker-config.sh

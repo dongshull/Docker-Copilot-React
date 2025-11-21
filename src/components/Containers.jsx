@@ -742,19 +742,18 @@ export function Containers() {
                 <div className="flex items-start space-x-3">
                   <div className="flex-shrink-0">
                     {(() => {
-                      // 获取镜像logo数据
-                      const imageLogos = JSON.parse(localStorage.getItem('docker_copilot_image_logos') || '{}');
                       // 查找匹配的镜像图标
                       let iconUrl = container.iconUrl;
 
                       // 如果容器没有自定义图标，则查找镜像图标
                       if (!iconUrl && container.usingImage) {
-                        // 首先尝试使用内置logo配置
-                        const builtInLogo = getImageLogo(container.usingImage, imageLogos);
+                        // 优先使用内置logo配置（不依赖localStorage）
+                        const builtInLogo = getImageLogo(container.usingImage);
                         if (builtInLogo) {
                           iconUrl = builtInLogo;
                         } else {
-                          // 如果没有内置logo，则使用原来的匹配逻辑
+                          // 如果没有内置logo，则尝试从用户自定义中查找
+                          const imageLogos = JSON.parse(localStorage.getItem('docker_copilot_image_logos') || '{}');
                           for (const [imageName, logoUrl] of Object.entries(imageLogos)) {
                             // 检查容器使用的镜像是否包含镜像名称
                             // 镜像名称格式可能是 "repository" 或 "repository:tag"
@@ -1137,18 +1136,17 @@ function ContainerDetailModal({ container, onClose, onRename, onUpdate, onAction
 
   // 获取容器图标 - 与列表显示逻辑一致
   const getContainerIcon = () => {
-    // 获取镜像logo数据
-    const imageLogos = JSON.parse(localStorage.getItem('docker_copilot_image_logos') || '{}');
     let iconUrl = currentContainer.iconUrl;
 
     // 如果容器没有自定义图标，则查找镜像图标
     if (!iconUrl && currentContainer.usingImage) {
-      // 首先尝试使用内置logo配置
-      const builtInLogo = getImageLogo(currentContainer.usingImage, imageLogos);
+      // 优先使用内置logo配置（不依赖localStorage）
+      const builtInLogo = getImageLogo(currentContainer.usingImage);
       if (builtInLogo) {
         iconUrl = builtInLogo;
       } else {
-        // 如果没有内置logo，则使用匹配逻辑
+        // 如果没有内置logo，则尝试从用户自定义中查找
+        const imageLogos = JSON.parse(localStorage.getItem('docker_copilot_image_logos') || '{}');
         for (const [imageName, logoUrl] of Object.entries(imageLogos)) {
           if (currentContainer.usingImage.startsWith(imageName) || 
               currentContainer.usingImage.includes(`${imageName}:`)) {

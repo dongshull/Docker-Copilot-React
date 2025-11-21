@@ -14,7 +14,7 @@ if [ $# -eq 0 ]; then
   PORT="${PORT:-12713}"
   START_SERVER=true
   CONFIG_DIR="/app/src/config"
-  IMAGE_CONFIG_DIR="/app/dist/src/config"
+  IMAGE_CONFIG_DIR="/app/dist/config"
 else
   # 本地配置模式
   API_BASE_URL="${1}"
@@ -22,7 +22,7 @@ else
   PORT="${3:-12713}"
   START_SERVER=false
   CONFIG_DIR="./src/config"
-  IMAGE_CONFIG_DIR="./dist/src/config"
+  IMAGE_CONFIG_DIR="./dist/config"
 fi
 
 echo "================================================"
@@ -83,7 +83,7 @@ init_config_dir() {
 if [ "$START_SERVER" = "true" ]; then
   # 检查是否挂载了宿主机目录（通过检查目录是否可写）
   if [ -w "/app/src" ]; then
-    init_config_dir "/app/src/config" "/app/dist/src/config"
+    init_config_dir "/app/src/config" "/app/dist/config"
   fi
 fi
 
@@ -93,8 +93,8 @@ if [ ! -d "$CONFIG_DIR" ]; then
 fi
 
 # 检查配置目录中的图片目录
-if [ -d "$CONFIG_DIR" ] && [ ! -d "$CONFIG_DIR/image" ]; then
-  echo "⚠ Warning: Image directory $CONFIG_DIR/image not found"
+if [ -d "$CONFIG_DIR" ] && [ ! -d "$CONFIG_DIR/images" ]; then
+  echo "⚠ Warning: Image directory $CONFIG_DIR/images not found"
 fi
 
 # 在 index.html 中注入 API 配置
