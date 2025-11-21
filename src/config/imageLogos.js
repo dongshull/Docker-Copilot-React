@@ -25,7 +25,9 @@ export const builtInImageLogos = {
   "easychen/cookiecloud": "https://raw.dongshu.fun:99/dc/100.png",
   "codercom/code-server": "https://icon.xiaoge.org/images/website/vscode.png",
   "iyuucn/iyuuplus": "https://icon.xiaoge.org/images/docker/IYUU.png",
-  "gdy666/lucky": "https://raw.dongshu.fun:99/dc/4.png"  
+  "iyuucn/iyuuplus-dev-nodb": "https://icon.xiaoge.org/images/docker/IYUU.png",
+  "gdy666/lucky": "https://raw.dongshu.fun:99/dc/4.png",
+  "amilys/embyserver":"https://cdn.statically.io/img/laji.o--o.xyz/i/2025/11/21/204626.png"  
 };
 
 // 获取镜像的logo URL
