@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { HardDrive, Trash, Trash2, Calendar, Download, RefreshCw, Link, BrushCleaning, List, Grid, X } from 'lucide-react'
+import { HardDrive, Trash, Trash2, Calendar, RefreshCw, Link, BrushCleaning, List, Grid, X } from 'lucide-react'
 import { imageAPI } from '../api/client.js'
 import { cn } from '../utils/cn.js'
 import { getImageLogo } from '../config/imageLogos.js'
@@ -336,6 +336,11 @@ export function Images() {
                   .replace(/b/g, 'B')
   }
 
+  // 获取镜像使用状态指示器颜色
+  const getUsageIndicatorColor = (inUsed) => {
+    return inUsed ? 'bg-green-500' : 'bg-gray-400'
+  }
+
   if (isLoading) {
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -665,6 +670,15 @@ export function Images() {
                       }
                     />
                   </div>
+                  
+                  {/* 使用状态指示器竖线 - 放在图标和镜像名称中间 */}
+                  <div className="flex flex-col items-center justify-center">
+                    <div className={cn(
+                      "w-1 h-10 rounded-full",
+                      getUsageIndicatorColor(image.inUsed)
+                    )}></div>
+                  </div>
+                  
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center space-x-2">
                       <h3 className="text-lg font-semibold text-gray-900 dark:text-white truncate">
@@ -680,42 +694,38 @@ export function Images() {
                         <Calendar className="h-3 w-3" />
                         <span>创建: {new Date(image.createTime).toLocaleDateString()}</span>
                       </div>
-                      <span className={cn(
-                        "badge",
-                        image.inUsed ? "badge-success" : "badge-warning"
-                      )}>
-                        容器: {image.inUsed ? '使用中' : '未使用'}
-                      </span>
                     </div>
                   </div>
                 </div>
 
                 <div className="flex items-center space-x-3">
-
                   <a
                     href={`https://hub.docker.com/r/${image.name}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                    className="flex items-center px-3 py-2 text-sm text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
                     title="在Docker Hub上查看"
                     aria-label="在Docker Hub上查看"
                   >
-                    <Link className="h-4 w-4" />
+                    <Link className="h-4 w-4 mr-1" />
+                    跳转
                   </a>
                   <button
                     onClick={() => handleDeleteImage(image.id)}
-                    className="p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                    className="flex items-center px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
                     title="删除镜像"
                   >
-                    <Trash className="h-4 w-4" />
+                    <Trash className="h-4 w-4 mr-1" />
+                    删除
                   </button>
                   {image.inUsed && (
                     <button
                       onClick={() => handleDeleteImage(image.id, true)}
-                      className="p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                      className="flex items-center px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
                       title="强制删除镜像"
                     >
-                      <Trash2 className="h-4 w-4" />
+                      <Trash2 className="h-4 w-4 mr-1" />
+                      强制删除
                     </button>
                   )}
                 </div>
