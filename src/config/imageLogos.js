@@ -30,7 +30,7 @@ export const builtInImageLogos = {
   "amilys/embyserver":"https://cdn.statically.io/img/laji.o--o.xyz/i/2025/11/21/204626.png",
   "audiobookshelf": "https://cdn.statically.io/img/laji.o--o.xyz/i/2025/11/21/205512.png",
   "mysql": "https://cdn.statically.io/img/laji.o--o.xyz/i/2025/11/21/205721.png",
-  "postgresql": "https://cdn.statically.io/img/laji.o--o.xyz/i/2025/11/21/205818.png",
+  "postgres": "https://cdn.statically.io/img/laji.o--o.xyz/i/2025/11/21/205818.png",
 };
 
 // 获取镜像的logo URL
@@ -38,15 +38,41 @@ export const builtInImageLogos = {
 export const getImageLogo = (imageName, customLogos = {}) => {
   // 先检查内置logo（优先级最高）
   const baseImageName = imageName.split(':')[0]; // 去掉tag部分
+
+  // 优先匹配完整镜像名（包含 registry/namespace）
   if (builtInImageLogos[baseImageName]) {
     return builtInImageLogos[baseImageName];
   }
-  
-  // 再检查用户自定义的logo
+
+  // 尝试匹配最后一段镜像名（去掉 registry/namespace）
+  const simpleName = baseImageName.split('/').pop();
+  if (builtInImageLogos[simpleName]) {
+    return builtInImageLogos[simpleName];
+  }
+
+  // 如果仍未匹配，使用关键字（子串）匹配：查找内置映射中是否有任意键是 baseImageName 或 simpleName 的子串
+  for (const [key, url] of Object.entries(builtInImageLogos)) {
+    if (!key) continue;
+    try {
+      if (baseImageName.includes(key) || simpleName.includes(key)) {
+        return url;
+      }
+    } catch (e) {
+      // 防御性代码：忽略任何异常并继续
+    }
+  }
+
+  // 再检查用户自定义的logo（支持 imageName、baseImageName、simpleName）
   if (customLogos[imageName]) {
     return customLogos[imageName];
   }
-  
+  if (customLogos[baseImageName]) {
+    return customLogos[baseImageName];
+  }
+  if (customLogos[simpleName]) {
+    return customLogos[simpleName];
+  }
+
   // 没有找到logo，返回null
   return null;
 };
@@ -59,7 +85,20 @@ export const getSupportedImageNames = () => {
 // 检查镜像是否有内置logo
 export const hasBuiltInLogo = (imageName) => {
   const baseImageName = imageName.split(':')[0];
-  return builtInImageLogos[baseImageName] !== undefined;
+  if (builtInImageLogos[baseImageName]) return true;
+  const simpleName = baseImageName.split('/').pop();
+  if (builtInImageLogos[simpleName]) return true;
+
+  // 关键字（子串）匹配：如果任何内置键是 baseImageName 或 simpleName 的子串，则视为存在
+  for (const key of Object.keys(builtInImageLogos)) {
+    if (!key) continue;
+    try {
+      if (baseImageName.includes(key) || simpleName.includes(key)) return true;
+    } catch (e) {
+      // 忽略并继续
+    }
+  }
+  return false;
 };
 
 // srchttps://raw.dongshu.fun:99/dc 文件夹中的可用图片文件列表
