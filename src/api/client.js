@@ -1,18 +1,19 @@
 import axios from 'axios'
 
 // 动态获取 API 基础地址
-// 优先级：window.__API_BASE_URL > 环境变量 > localStorage > 默认值
+// 优先级：当前主机 > window.__API_BASE_URL > localStorage > 环境变量
 function getAPIBaseURL() {
-  // 1. 检查全局变量（注入的配置）- 最高优先级
+  // 1. 最高优先级：使用当前主机
+  if (typeof window !== 'undefined' && window.location.host) {
+    const currentHostURL = `${window.location.protocol}//${window.location.host}`
+    console.log('Using current host API URL:', currentHostURL)
+    return currentHostURL
+  }
+  
+  // 2. 检查全局变量（注入的配置）
   if (typeof window !== 'undefined' && window.__API_BASE_URL) {
     console.log('Using injected API URL:', window.__API_BASE_URL)
     return window.__API_BASE_URL
-  }
-  
-  // 2. 检查环境变量（构建时注入）
-  if (import.meta.env.VITE_API_BASE_URL) {
-    console.log('Using build-time API URL:', import.meta.env.VITE_API_BASE_URL)
-    return import.meta.env.VITE_API_BASE_URL
   }
   
   // 3. 检查 localStorage（用户保存的地址）
@@ -22,10 +23,16 @@ function getAPIBaseURL() {
     return savedURL
   }
   
-  // 4. 默认值 - 使用当前主机
-  const defaultURL = `http://${window.location.hostname}:12712`
-  console.log('Using default API URL:', defaultURL)
-  return defaultURL
+  // 4. 最低优先级：环境变量（构建时注入）
+  if (import.meta.env.VITE_API_BASE_URL) {
+    console.log('Using build-time API URL:', import.meta.env.VITE_API_BASE_URL)
+    return import.meta.env.VITE_API_BASE_URL
+  }
+  
+  // 5. 最后的默认值
+  const fallbackURL = 'http://localhost'
+  console.log('Using fallback API URL:', fallbackURL)
+  return fallbackURL
 }
 
 const API_BASE_URL = getAPIBaseURL()

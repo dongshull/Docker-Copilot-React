@@ -9,7 +9,7 @@ set -e
 # 解析参数
 if [ $# -eq 0 ]; then
   # Docker 容器内运行模式
-  API_BASE_URL="${VITE_API_BASE_URL:-http://localhost:12712}"
+  API_BASE_URL="${VITE_API_BASE_URL:-http://localhost}"
   DIST_DIR="/app/dist"
   PORT="${PORT:-12713}"
   START_SERVER=true
