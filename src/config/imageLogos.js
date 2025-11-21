@@ -27,7 +27,10 @@ export const builtInImageLogos = {
   "iyuucn/iyuuplus": "https://icon.xiaoge.org/images/docker/IYUU.png",
   "iyuucn/iyuuplus-dev-nodb": "https://icon.xiaoge.org/images/docker/IYUU.png",
   "gdy666/lucky": "https://raw.dongshu.fun:99/dc/4.png",
-  "amilys/embyserver":"https://cdn.statically.io/img/laji.o--o.xyz/i/2025/11/21/204626.png"  
+  "amilys/embyserver":"https://cdn.statically.io/img/laji.o--o.xyz/i/2025/11/21/204626.png",
+  "audiobookshelf": "https://cdn.statically.io/img/laji.o--o.xyz/i/2025/11/21/205512.png",
+  "mysql": "https://cdn.statically.io/img/laji.o--o.xyz/i/2025/11/21/205721.png",
+  "postgresql": "https://cdn.statically.io/img/laji.o--o.xyz/i/2025/11/21/205818.png",
 };
 
 // 获取镜像的logo URL
