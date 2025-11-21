@@ -20,8 +20,5 @@ jobs:
             -H "Authorization: Bearer ${GH_TOKEN}" \
             https://api.github.com/repos/onlyLTY/dockerCopilot/actions/workflows/docker-build-push-latest.yml/dispatches \
             -d '{
-              "ref": "latest",
-              "inputs": {
-                "from_repo": "dongshull/Docker-Copilot-React"
-              }
+              "ref": "latest"
             }'
